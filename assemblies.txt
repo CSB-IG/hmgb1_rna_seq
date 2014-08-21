@@ -1,0 +1,6 @@
+./Ctl-1/transcripts.gtf
+./Ctl-4/transcripts.gtf
+./Ctl-5/transcripts.gtf
+./HMGB1-1/transcripts.gtf
+./HMGB1-4/transcripts.gtf
+./HMGB1-5/transcripts.gtf

@@ -1,0 +1,1 @@
+./cufflinks-2.2.1.Linux_x86_64/cuffdiff -p 24 -o diff merged_asm/merged.gtf bams/Ctl-1.merged.bam,bams/Ctl-4.merged.bam,bams/Ctl-5.merged.bam bams/HMGB1-1.merged.bam,bams/HMGB1-4.merged.bam,bams/HMGB1-5.merged.bam 
