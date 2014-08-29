@@ -1,5 +1,5 @@
 QUALIMAP=/home/rgarcia/Downloads/qualimap_v1.0/qualimap
-GTF=/media/e/gre_10036_rna/iGenome/Homo_sapiens/Ensembl/GRCh37/Annotation/Genes/genes.gtf
+GTF=/media/e/gre_10036_rna/iGenome/Homo_sapiens/NCBI/build37.2/Annotation/Genes/genes_alt.gtf
 
 $QUALIMAP rnaseq -gtf $GTF -bam /media/e/gre_10036_rna/bams/Ctl-1.merged.bam -outdir /media/e/gre_10036_rna/qualimap/Ctl-1.merged.bam 
 $QUALIMAP rnaseq -gtf $GTF -bam /media/e/gre_10036_rna/bams/Ctl-4.merged.bam -outdir /media/e/gre_10036_rna/qualimap/Ctl-4.merged.bam 
