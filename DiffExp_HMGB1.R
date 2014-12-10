@@ -139,7 +139,7 @@ head(mylength)
 #feature <- data.frame(gc=myGC[,2],length=mylength[,2], rownames=biomart[,6], 
 #                      biotype = mybiotypes, chromosome = mychroms)
 
-feature <- data.frame(gc=biomart[,1], length=biomart[,6], myRaw[,1],
+feature <- data.frame(gc=biomart[,1], length=biomart[,6], rownames = row.names(biomart),
                       biotype = biomart[,2], 
                       Chr=biomart[,3],
                       GeneStart=biomart[,4],
@@ -161,7 +161,7 @@ common<- apply(myRaw,1,function(x) mean(x)>10)
 
 table(common)
 #FALSE  TRUE 
-#2326 15332
+#16509 17343 
 
 ##Filtering low expression genes
 feature<-feature[common,]
@@ -172,33 +172,43 @@ mydataRaw = NOISeq::readData(data=myRaw,
                              length = feature[,c("rownames","length")], 
                              biotype = feature$mybiotypes, 
                              chromosome = feature[,c("Chr", "GeneStart", "GeneEnd")], 
-                             factors = phenoData(data)@data, 
+                             factors = phenoData(mydata)@data, 
                              gc = feature[,c("rownames","gc")])
 
 ## Length bias detection
-mylengthbiasRaw = NOISeq::dat(mydataRaw, factor = "conditions", norm = TRUE, type = "lengthbias")
+mylengthbiasRaw = NOISeq::dat(mydataRaw,  norm = TRUE, type = "lengthbias")
+pdf("Bias.pdf")
 par(mfrow = c(1,2))
 explo.plot(mylengthbiasRaw)
+
 ##GCBias
-mygcbiasRaw = NOISeq::dat(mydataRaw, factor = "conditions", norm = TRUE, type = "GCbias")
-par(mfrow = c(1,2))
+mygcbiasRaw = NOISeq::dat(mydataRaw, norm = TRUE, type = "GCbias")
+
+
 explo.plot(mygcbiasRaw)
+dev.off()
 ## RNA composition
 mycompRaw = NOISeq::dat(mydataRaw, norm = TRUE, type = "cd", refColumn =5)
-explo.plot(mycompRaw, samples=sample(1:ncol(data2), 12))
+pdf("RNAComp.pdf")
+explo.plot(mycompRaw, samples=sample(1:ncol(mydata), 6))
 table(mycompRaw@dat$DiagnosticTest[,  "Diagnostic Test"])
+dev.off()
 #FAILED PASSED 
 #382     44
 
 ##Length, gc and RNA content bias detected
 
 ##Normalization
-data <- EDASeq::newSeqExpressionSet(counts=myRaw,
+data <- EDASeq::newSeqExpressionSet(exprs=myRaw,
                                     featureData=feature,
                                     phenoData=data.frame(
-                                      conditions=c(rep("E",327),rep("S",100)),
+                                      conditions=c(rep("C",3),rep("H",3)),
                                       row.names=colnames(myRaw)))
 data
+################
+###Hasta aqi jala
+################
+
 
 #"loess","median","upper"
 #data2 <- withinLaneNormalization(as.matrix(counts(data)),feature$gc, which="full")
