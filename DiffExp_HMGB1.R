@@ -218,7 +218,7 @@ data
 #                                 which="full")
 
 #RPKM + FC gc
-data2 <- rpkm(as.matrix(counts(data)), long=feature$length)
+data2 <- rpkm(as.matrix(exprs(data)), long=feature$length)
 data2 <- withinLaneNormalization(data2,feature$gc, which="full")
 
 #dataOffset <- withinLaneNormalization(data,"length", which="full")
@@ -238,25 +238,26 @@ mydata = NOISeq::readData(data=data3,
 
 ## Length bias detection
 mylengthbias = NOISeq::dat(mydata, factor = "conditions", norm = TRUE, type = "lengthbias")
-par(mfrow = c(1,2))
+pdf("biasPosNorm.pdf")
+par(mfrow = c(1,3))
 explo.plot(mylengthbias)
 ##GCBias
 mygcbias = NOISeq::dat(mydata, factor = "conditions", norm = TRUE, type = "GCbias")
-par(mfrow = c(1,2))
+#par(mfrow = c(1,2))
 explo.plot(mygcbias)
 ## RNA composition
 mycomp = NOISeq::dat(mydata, norm = TRUE, type = "cd", refColumn =5)
-explo.plot(mycomp, samples=sample(1:ncol(data2), 12))
-
+explo.plot(mycomp, samples=sample(1:ncol(data2), 6))
+dev.off()
 table(mycomp@dat$DiagnosticTest[,  "Diagnostic Test"])
 #PASSED 
 #426 
-#write.table(data3, file = "NormMatrixRNAseq.txt")
+write.table(data3, file = "NormMatrixRNAseqHMGB1.txt")
 
 load(file="DataNormalized.RData")
-sanos<-data3[,328:ncol(data3)]
+sanos<-data3[,1:3]
 sanos<-cbind(gene=row.names(sanos),sanos)
-enfermos<-data3[,1:327]
+enfermos<-data3[,4:6]
 enfermos<-cbind(gene=row.names(enfermos),enfermos)
 #write.table(sanos, file = "Sanos.tab", sep="\t", quote=FALSE, row.names=FALSE)
 #write.table(enfermos, file = "Enfermos.tab", sep="\t", quote=FALSE, row.names=FALSE)
@@ -316,7 +317,7 @@ plot(t(enfermos[id,]))
 
 #### 3) NOISE FILTERING
 library("NOISeq")
-myfilterRaw<-filtered.data(data3, factor="conditions", norm=TRUE, cv.cutoff=100, cpm=10)
+myfilterRaw<-filtered.data(data3, factor="conditions", norm=TRUE, cv.cutoff=1000, cpm=10)
 nrow(data3)
 #[1] 15573
 #[1] "Filtering out low count features..."
@@ -324,10 +325,11 @@ nrow(data3)
 #[1] "6432 features are to be kept for differential expression analysis with filtering method 1" cpm=10
 #15573-9268
 #6305 filtrados
+pdf("ggplotsNoiseFilteringHMGB1.pdf")
+ggplot(data=melt(log(myfilterRaw[ ,sample(1:ncol(myfilterRaw),6)]+1)),aes(y=value, x=X2, group=X2, colour=X2))+geom_boxplot()
+ggplot(data=melt(log(myfilterRaw[ ,sample(1:ncol(myfilterRaw), 6)]+1)),aes(x=value, group=X2, colour=X2))+geom_density()
 
-ggplot(data=melt(log(myfilterRaw[ ,sample(1:ncol(myfilterRaw), 12)]+1)),aes(y=value, x=X2, group=X2, colour=X2))+geom_boxplot()
-
-ggplot(data=melt(log(myfilterRaw[ ,sample(1:ncol(myfilterRaw), 12)]+1)),aes(x=value, group=Var2, colour=Var2))+geom_density()
+dev.off()
 
 
 #### 2) PCA EXPLORATION
@@ -340,19 +342,19 @@ traditional.pca<-prcomp(t(log2(1+myfilterRaw)))
 summary(traditional.pca)
 
 ## Variance explained by each component
-# pdf("Ex2_PCAvarExp14Oct.pdf", width = 4*2, height = 4*2)
+pdf("Ex2_PCAvarExpHMGB1.pdf", width = 4*2, height = 4*2)
 barplot(pca.results$var.exp[,1], xlab = "PC", ylab = "explained variance", ylim = c(0,0.4))
-# dev.off()
+ dev.off()
 
 ## Loading plot
-# pdf("Ex2_LoadingPlot14Oct.pdf", width = 4*2, height = 4*2)
+ pdf("Ex2_LoadingPlotHMGB1.pdf", width = 4*2, height = 4*2)
 plot(pca.results$loadings[,1:2], col = 1, pch = 20, cex = 0.5,
      xlab = paste("PC 1 ", round(pca.results$var.exp[1,1]*100,0), "%", sep = ""),
      ylab = paste("PC 2 ", round(pca.results$var.exp[2,1]*100,0), "%", sep = ""),
      main = "PCA loadings",
      xlim = range(pca.results$loadings[,1:2]) + 0.02*diff(range(pca.results$loadings[,1:2]))*c(-1,1),
      ylim = range(pca.results$loadings[,1:2]) + 0.02*diff(range(pca.results$loadings[,1:2]))*c(-1,1))  
-# dev.off()
+ dev.off()
 
 
 ## Score plot
@@ -360,18 +362,19 @@ plot(pca.results$loadings[,1:2], col = 1, pch = 20, cex = 0.5,
 # shapes for the plot
 # mypch = rep(c(16,17), each = 6)
 
-myfactors = data.frame("type" = substr(colnames(data2), start = 1, stop = 1),
+myfactors = data.frame("type" = substr(colnames(data2), start = 1, stop = 1))
+,
                        "day" = substr(colnames(data2), start = 3, stop = 5)
 )
 myfactors$type
 myfactors = data.frame(myfactors, "cond" = apply(myfactors, 1, paste, collapse = "_"))
 # colors for the plot
 mycol = as.character(myfactors$type)
-mycol[mycol == 'S'] = "black"
-mycol[mycol == 'E'] = "red2"
+mycol[mycol == 'C'] = "black"
+mycol[mycol == 'H'] = "red2"
 
 
-# pdf("Ex2_PCA.pdf", width = 5*2, height = 5)
+ pdf("Ex2_PCAHMGB1.pdf", width = 5*2, height = 5)
 par(mfrow = c(1,2))
 
 # PC1 & PC2
@@ -398,7 +401,7 @@ points(pca.results$scores[,1], pca.results$scores[,3], col = mycol, cex = 1.5)
 legend("topright", unique(as.character(myfactors$type)), col = rep(unique(mycol),2), ncol = 2)
 
 
-# dev.off()
+ dev.off()
 ##Probamos si ArSym reduce el ruido########################################################
 myARSyN <- ARSyN(data=log2(myfilterRaw + 1), Covariates=t(as.matrix(myfactors$type)))
 
@@ -408,19 +411,19 @@ traditional.pca<-prcomp(t(myARSyN))
 summary(traditional.pca)
 
 ## Variance explained by each component
-# pdf("Ex2_PCAvarExp14Oct.pdf", width = 4*2, height = 4*2)
+ pdf("Ex2_PCAvarExpARSyN_HMGB1.pdf", width = 4*2, height = 4*2)
 barplot(pca.results$var.exp[,1], xlab = "PC", ylab = "explained variance", ylim = c(0,0.4))
-# dev.off()
+ dev.off()
 
 ## Loading plot
-# pdf("Ex2_LoadingPlot14Oct.pdf", width = 4*2, height = 4*2)
+ pdf("Ex2_LoadingPlotARSyN_HMGB1.pdf", width = 4*2, height = 4*2)
 plot(pca.results$loadings[,1:2], col = 1, pch = 20, cex = 0.5,
      xlab = paste("PC 1 ", round(pca.results$var.exp[1,1]*100,0), "%", sep = ""),
      ylab = paste("PC 2 ", round(pca.results$var.exp[2,1]*100,0), "%", sep = ""),
      main = "PCA loadings",
      xlim = range(pca.results$loadings[,1:2]) + 0.02*diff(range(pca.results$loadings[,1:2]))*c(-1,1),
      ylim = range(pca.results$loadings[,1:2]) + 0.02*diff(range(pca.results$loadings[,1:2]))*c(-1,1))  
-# dev.off()
+ dev.off()
 
 
 ## Score plot
@@ -429,7 +432,7 @@ plot(pca.results$loadings[,1:2], col = 1, pch = 20, cex = 0.5,
 # mypch = rep(c(16,17), each = 6)
 
 myfactors = data.frame("type" = substr(colnames(data2), start = 1, stop = 1),
-                       "day" = substr(colnames(data2), start = 3, stop = 5)
+                       "day" = substr(colnames(data2), start = 2, stop = 2)
 )
 myfactors$type
 myfactors = data.frame(myfactors, "cond" = apply(myfactors, 1, paste, collapse = "_"))
@@ -439,7 +442,7 @@ mycol[mycol == 'S'] = "black"
 mycol[mycol == 'E'] = "red2"
 
 
-# pdf("Ex2_PCA.pdf", width = 5*2, height = 5)
+ pdf("Ex2_PCA_ARSyN_HMGB1.pdf", width = 5*2, height = 5)
 par(mfrow = c(1,1))
 # PC1 & PC2
 rango = diff(range(pca.results$scores[,1:2]))
@@ -453,16 +456,16 @@ points(pca.results$scores[,1], pca.results$scores[,2], col = mycol, cex = 1.5)
 legend("topright", legend=unique(as.character(myfactors$type)), col=unique(mycol), pch=21)
 
 
-ggplot(data=melt((myARSyN[ ,sample(1:ncol(myARSyN), 12)])),aes(y=value, x=X2, group=X2, colour=X2))+geom_boxplot()
+ggplot(data=melt((myARSyN[ ,sample(1:ncol(myARSyN), 6)])),aes(y=value, x=X2, group=X2, colour=X2))+geom_boxplot()
 
-ggplot(data=melt((myARSyN[ ,sample(1:ncol(myARSyN), 12)])),aes(x=value, group=X2, colour=X2))+geom_density()
-
+ggplot(data=melt((myARSyN[ ,sample(1:ncol(myARSyN), 6)])),aes(x=value, group=X2, colour=X2))+geom_density()
+dev.off()
 dim(myARSyN)
 #[1] 6432  427
 
-sanos<-myARSyN[,328:ncol(myARSyN)]
+sanos<-myARSyN[,1:3]
 sanos<-cbind(gene=row.names(sanos),sanos)
-enfermos<-myARSyN[,1:327]
+enfermos<-myARSyN[,4:6]
 enfermos<-cbind(gene=row.names(enfermos),enfermos)
 #write.table(sanos, file = "Sanos.tab", sep="\t", quote=FALSE, row.names=FALSE)
 #write.table(enfermos, file = "Enfermos.tab", sep="\t", quote=FALSE, row.names=FALSE)
@@ -507,7 +510,7 @@ load(file="DataNormalized.RData")
 
 ##Haciendo el an??lisis con lima
 library("limma")
-target<-data.frame(treatment=factor(substr(start=1, stop=1, colnames(myARSyN)), level=c("S", "E")),
+target<-data.frame(treatment=factor(substr(start=1, stop=1, colnames(myARSyN)), level=c("C", "H")),
                    replicate=colnames(myARSyN))
 table(target$treatment)
 #   S   E 
@@ -517,28 +520,40 @@ dim(myARSyN)
 design<-model.matrix(~1+treatment, data=target)
 head(design)
 #   (Intercept) treatmentE
-# 1           1          1
-# 427           1          0
+# 1           1          0
+# 2           1          0
+# 3           1          0
+# 4           1          1
+# 5           1          1
+# 6           1          1
 
 
 fit <- lmFit(myARSyN, design)
 head(fit$coefficients)
 #       (Intercept) treatmentE
-# A1BG    0.7676851  1.7098267
-# A2M     9.2661820 -0.9901541
-# AAAS    4.2051544  0.1241219
-# AACS    5.1092921 -0.3309201
-# AAGAB   3.9097905  0.7914879
-# AAMP    6.9543866  0.1454249
+# 7SK      6.126987  0.075123623
+# AAAS     4.519890  0.105066129
+# AAGAB    3.944239 -0.179490890
+# AAMP     6.464535 -0.025176113
+# AAR2     3.581444  0.001879786
+# AARS     4.810953  0.105066129
 ##Enfermos-Sanos est?? en treatmentE
 fit2 <- eBayes(fit)
+topTable(fit2, n = 1000)
+#######
+##Aca todavía jala
+######
+
 fit2$fdr<-apply(fit2$"p.value", 2, p.adjust, method="fdr")
 
 ##Buscando los genes diferenciales---------------------------------
-alphas<-c(0.05, 10^(-2:-40))
+alphas<-c(0.05, 10^(-2:-10))
 degCount<-sapply(alphas, function(alpha){
-  table(fit2$fdr[,"treatmentE"]<alpha)
-})
+  table(fit2$fdr[,"treatmentE"]<alpha)})
+
+
+
+
 colnames(degCount)<-alphas
 degCount
 #       0.05 0.01 0.001 1e-04 1e-05 1e-06 1e-07 1e-08 1e-09 1e-10 1e-11 1e-12 1e-13 1e-14 1e-15 1e-16 1e-17 1e-18 1e-19
@@ -550,7 +565,7 @@ degCount
 #       1e-39 1e-40
 # FALSE  5451  5489
 # TRUE    981   943
-vennDiagram(decideTests(fit2, adjust.method="fdr", p.value=1e-38))
+vennDiagram(decideTests(fit2, adjust.method="fdr", p.value=1e-10))
 ##Tomemos alpha=1e-38 que son 1031 diferenciales y 5401 no diferenciales
 fit2$deg<-cbind(limma38=fit2$fdr<1e-38)
 
@@ -616,7 +631,7 @@ library("NOISeq")
 
 # mydata<- readData(data=myARSyN, biotype=feature[], chromosome = mychroms, factors = myfactors, gc = myGC)
 myfactors <- data.frame("type" = substr(colnames(myARSyN), start = 1, stop = 1),
-                        "day" = substr(colnames(myARSyN), start = 3, stop = 5)
+                        "day" = substr(colnames(myARSyN), start = 2, stop = 2)
 )
 myfactors <- data.frame(myfactors, "cond" = apply(myfactors, 1, paste, collapse = "_"))
 idGenes<-row.names(feature)%in%row.names(myARSyN)
@@ -628,7 +643,7 @@ mydata<- NOISeq::readData(data=myARSyN,
                           gc = feature[idGenes, c("rownames","gc")])
 
 mynoiseqbio <- noiseqbio(mydata, norm = "n", k = 0.5, lc = 0, factor = "type", 
-                         conditions = NULL, r = 1000, plot = FALSE, filter = 0)
+                         conditions = NULL, r = 30, plot = FALSE, filter = 0)
 
 alphas<-c(0.05, 10^(-2:-40))
 results<-as.data.frame(cbind(alpha=alphas, do.call(rbind, sapply(alphas, function(alpha){
