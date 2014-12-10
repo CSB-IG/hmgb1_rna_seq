@@ -22,46 +22,48 @@
 # source("http://bioconductor.org/biocLite.R")
 # biocLite("edgeR")
 
-setwd("~/RawCountsNotron")
-#myRaw = read.delim("RawChico.txt", header = TRUE, as.is = TRUE, row.names = 1)
-myRaw = read.delim("RawFull.txt", header = TRUE, as.is = TRUE, row.names = 1)
+setwd("~/Dropbox/RawCountsNotron")
+myRaw = read.delim("ine_collapsed.txt", header = TRUE, as.is = TRUE, row.names = 1, sep = " ")
 
 head(myRaw)
 dim(myRaw)
 
+
 # myRaw = myRaw[, grep(".D", colnames(myRaw), fixed = TRUE)]
 myRaw = myRaw[,order(colnames(myRaw))]
-# tail(myRaw)
+ tail(myRaw)
 
 ## Biological annotation (from Biomart)
-biomart = read.delim("biomartHH.txt", header = TRUE, as.is = TRUE, row.names =1)
-# tail(biomart)
+biomart = read.delim("BiomartUniq.txt", header = TRUE, as.is = TRUE, row.names = 1)
+ tail(biomart)
 
 
 
 
 
 
+head(biomart)
+biomart1 = read.delim("BiomartUniq.txt", header = TRUE, as.is = TRUE)
 ##*****************************************************##
 
-
-
+gSymbol = biomart1[,(1)]
+head(gSymbol)
 #### 1) EXPLORATORY ANALYSIS (NOISeq package)
 
 # biocLite("NOISeq")
 library(NOISeq)
 
-## Reading data in NOISeq package
 
-mybiotypes = biomart[,c(6,4)]
+mybiotypes = biomart[(2)]
 head(mybiotypes)
 
-mychroms = biomart[,1:3]
-head(mychroms)
-rownames(mychroms) = biomart[,6]
+mychroms = biomart[,3:5]
+rownames(mychroms) = row.names(biomart)
 colnames(mychroms) = c("Chr", "GeneStart", "GeneEnd")
+head(mychroms)
 
-myGC = biomart[,c(6,5)]
+
+myGC = biomart[(1)]
 head(myGC)
 ##En esta dices cuantos son los grupos, en each
 myfactors = data.frame("group" = substr(colnames(myRaw), start = 1, stop = 1)
@@ -72,15 +74,11 @@ myfactors = data.frame("group" = substr(colnames(myRaw), start = 1, stop = 1)
 # myfactors = data.frame("group" = as.factor(rep(c("E","S"), each=9)))
 
 # myfactors
-mylength = biomart[,c(6, 8)]
+mylength = biomart[(6)]
 head(mylength)
 
 mydata = NOISeq::readData(data = myRaw, length = mylength, biotype = mybiotypes, chromosome = mychroms, factors = myfactors, gc = myGC)
 
-
-
-
-# head(myfactors, n =12)
 #############################################
 #############################################
 
@@ -89,30 +87,30 @@ mydata = NOISeq::readData(data = myRaw, length = mylength, biotype = mybiotypes,
 ####TODO ESTO VA EN EL QCreport ##########
 ##########################################
 ## Biodetection plot
-# mybiodetection <- dat(mydata, type = "biodetection", factor = "group", k = 0)
-# par(mfrow = c(1,2))
-# explo.plot(mybiodetection)
-# ## Count distribution per biotype
-# mycountsbio = dat(mydata, factor = NULL, type = "countsbio")
-# explo.plot(mycountsbio, toplot = 1, samples = 1, plottype = "boxplot")
-# ## Saturation plot
-# mysaturation = dat(mydata, k = 0, ndepth = 7, type = "saturation")
-# explo.plot(mysaturation, toplot = "protein_coding", samples = c(1,4), yleftlim = NULL, yrightlim = NULL)
-# ## Count distribution per sample
-# explo.plot(mycountsbio, toplot = "global", samples = NULL, plottype = "boxplot")
-# explo.plot(mycountsbio, toplot = "global", samples = NULL, plottype = "barplot")
-# ## Length bias detection
-# mylengthbias = dat(mydata, factor = "group", norm = FALSE, type = "lengthbias")
-# par(mfrow = c(1,2))
-# explo.plot(mylengthbias, samples = 1:2)
-# ## RNA composition
-# mycomp = dat(mydata, norm = FALSE, type = "cd")
-# explo.plot(mycomp)
+mybiodetection <- NOISeq::dat(mydata, type = "biodetection", factor = "group", k = 0)
+par(mfrow = c(1,2))
+explo.plot(mybiodetection)
+## Count distribution per biotype
+mycountsbio = NOISeq::dat(mydata, factor = "group", type = "countsbio")
+explo.plot(mycountsbio, toplot = 1, samples = 1, plottype = "boxplot")
+## Saturation plot
+mysaturation = dat(mydata, k = 0, ndepth = 7, type = "saturation")
+explo.plot(mysaturation, toplot = "protein_coding", samples = c(1,4), yleftlim = NULL, yrightlim = NULL)
+## Count distribution per sample
+explo.plot(mycountsbio, toplot = "global", samples = NULL, plottype = "boxplot")
+explo.plot(mycountsbio, toplot = "global", samples = NULL, plottype = "barplot")
+## Length bias detection
+mylengthbias = dat(mydata, factor = "group", norm = FALSE, type = "lengthbias")
+par(mfrow = c(1,2))
+explo.plot(mylengthbias, samples = 1:2)
+## RNA composition
+mycomp = dat(mydata, norm = FALSE, type = "cd")
+explo.plot(mycomp)
 ########################################
 ########################################
 
 ## Quality Control Report
-QCreport(mydata, factor = "group")
+QCreport(mydata, factor = "group", file = "QCprueba.pdf")
 
 
 
@@ -141,11 +139,11 @@ head(mylength)
 #feature <- data.frame(gc=myGC[,2],length=mylength[,2], rownames=biomart[,6], 
 #                      biotype = mybiotypes, chromosome = mychroms)
 
-feature <- data.frame(gc=biomart[,5], length=biomart[,8], rownames=biomart[,6], 
-                      biotype = biomart[,4], 
-                      Chr=biomart[,1],
-                      GeneStart=biomart[,2],
-                      GeneEnd=biomart[,3])
+feature <- data.frame(gc=biomart[,1], length=biomart[,6], myRaw[,1],
+                      biotype = biomart[,2], 
+                      Chr=biomart[,3],
+                      GeneStart=biomart[,4],
+                      GeneEnd=biomart[,5])
 
 #filtrar por media mayor a un valor
 
